@@ -822,38 +822,56 @@
         }
 
         function updateCharts() {
-            const categoryTotals = {};
-            
-            Object.keys(categories).forEach(key => {
-                categoryTotals[key] = 0;
-            });
 
-            expenses.forEach(exp => {
-                categoryTotals[exp.category] += exp.amount;
-            });
+    /* ===== PIE CHART: THEO DANH MỤC, TOOLTIP CHI TIẾT ===== */
+    const categoryTotals = {};
+    Object.keys(categories).forEach(k => categoryTotals[k] = 0);
 
-            const labels = [];
-            const data = [];
-            const colors = [];
+    expenses.forEach(e => {
+        categoryTotals[e.category] += e.amount;
+    });
 
-            Object.keys(categoryTotals).forEach(key => {
-                if (categoryTotals[key] > 0) {
-                    labels.push(categories[key].name);
-                    data.push(categoryTotals[key]);
-                    colors.push(categories[key].color);
-                }
-            });
+    const pieLabels = [];
+    const pieData = [];
+    const pieColors = [];
 
-            pieChart.data.labels = labels;
-            pieChart.data.datasets[0].data = data;
-            pieChart.data.datasets[0].backgroundColor = colors;
-            pieChart.update();
-
-            barChart.data.labels = labels;
-            barChart.data.datasets[0].data = data;
-            barChart.data.datasets[0].backgroundColor = colors;
-            barChart.update();
+    Object.keys(categoryTotals).forEach(k => {
+        if (categoryTotals[k] > 0) {
+            pieLabels.push(categories[k].name);
+            pieData.push(categoryTotals[k]);
+            pieColors.push(categories[k].color);
         }
+    });
+
+    pieChart.data.labels = pieLabels;
+    pieChart.data.datasets[0].data = pieData;
+    pieChart.data.datasets[0].backgroundColor = pieColors;
+
+    pieChart.options.plugins.tooltip.callbacks = {
+        label: function (context) {
+            const categoryKey = Object.keys(categories)
+                .find(k => categories[k].name === context.label);
+
+            const detailList = expenses
+                .filter(e => e.category === categoryKey)
+                .map(e => `• ${e.name}: ${formatMoney(e.amount)}`);
+
+            return detailList;
+        }
+    };
+
+    pieChart.update();
+
+    /* ===== BAR CHART: THEO KHOẢN CHI CỤ THỂ ===== */
+    barChart.data.labels = expenses.map(e => e.name);
+    barChart.data.datasets[0].data = expenses.map(e => e.amount);
+    barChart.data.datasets[0].backgroundColor = expenses.map(
+        e => categories[e.category].color
+    );
+
+    barChart.update();
+}
+
 
         // THÊM MỚI: Hàm toggle hiển thị/ẩn biểu đồ
         function toggleChartsVisibility() {
